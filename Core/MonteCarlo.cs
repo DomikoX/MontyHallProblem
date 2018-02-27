@@ -2,72 +2,77 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Core
 {
-    public class MonteCarlo
+    public abstract class MonteCarlo<R, I, F>
     {
-
-        public int DoorsCount { get; set; }
         public long Replications { get; set; }
-        public int FirstChoiseWinning { get; set; } = 0;
-        public int ChangedChoiseWinning { get; set; } = 0;
+        public long ResultInterval { get; set; }
+        public I InputData { get; set; }
 
-        public delegate void NewResult(long replications, decimal p);
+        private delegate bool ResultIntervalConditionDelegate(long replication);
+        private ResultIntervalConditionDelegate ResultIntervalCondition;
 
-        public NewResult FirstChoiceResult;
-        public NewResult ChangedChoiceResult;
+        public delegate void PartialResult(long replication, R result);
+        public event PartialResult OnNewPartialResult;
 
+        public delegate void Result(F result);
+        public event Result OnFinish;
 
-        public MonteCarlo(int doorsCount, long replications = 10000000)
+        private ManualResetEvent mutex;
+
+        public MonteCarlo(I inputData, long replications = 1000000, long? resultInterval = null)
         {
-            this.DoorsCount = doorsCount;
+            this.InputData = inputData;
             this.Replications = replications;
+            this.ResultInterval = resultInterval ?? (Replications >= 1000 ? Replications / 100 : Replications / 10);
+            this.mutex = new ManualResetEvent(true);
+            if( resultInterval == 1)
+            {
+                ResultIntervalCondition = (rep) => true;
+            }else
+            {
+                ResultIntervalCondition = (rep) => rep % (ResultInterval) == 1;
+            }
         }
+
+        public abstract void Inicialization();
+        public abstract R Experiment(long replication);
+        public abstract F AfterExperiment();
 
         public Task RunExperiment()
         {
             return Task.Run(() =>
             {
-                var every = Replications >= 1000 ? Replications /100 : Replications /10;
-
-                var seedRandom = new Random();
-
-                var winningDoorGenerator = new Random(seedRandom.Next());
-                var userChoiseGenerator = new Random(seedRandom.Next());
-                var doorToOpenGenerator = new Random(seedRandom.Next());
-
-                int winningChoise, userFirstChoise, userChangedChoise, openedDoors;
-
+                Inicialization();
+                R experimentResult = default(R);
                 for (long i = 1; i <= Replications; i++)
                 {
-                    winningChoise = winningDoorGenerator.Next(DoorsCount);
-                    
-                    userFirstChoise = userChoiseGenerator.Next(DoorsCount);
+                    mutex.WaitOne();
 
-                    do
+                    experimentResult = Experiment(i);
+
+                    if (ResultIntervalCondition(i))
                     {
-                        openedDoors = doorToOpenGenerator.Next(DoorsCount);
-                    } while (openedDoors == winningChoise || openedDoors == userFirstChoise);
-
-                    do
-                    {
-                        userChangedChoise = userChoiseGenerator.Next(DoorsCount);
-                    } while (userChangedChoise == userFirstChoise || userChangedChoise == openedDoors);
-
-                    if (userFirstChoise == winningChoise) FirstChoiseWinning++;
-                    else if (userChangedChoise == winningChoise) ChangedChoiseWinning++;
-
-                    if (i % (every) == 1 || i == Replications)
-                    {
-                        FirstChoiceResult?.Invoke(i, ((decimal)FirstChoiseWinning / i) * 100);
-                        ChangedChoiceResult?.Invoke(i, ((decimal)ChangedChoiseWinning / i) * 100);
+                        OnNewPartialResult?.Invoke(i, experimentResult);
                     }
                 }
+                OnNewPartialResult?.Invoke(Replications, experimentResult);
+                OnFinish?.Invoke(AfterExperiment());
             });
-
         }
 
+        public void Pause()
+        {
+            mutex.Reset();
+        }
+
+        public void Continue()
+        {
+            mutex.Set();
+        }
     }
 }

@@ -27,6 +27,7 @@ namespace GUI
         public SeriesCollection SeriesCollection { get; set; }
         public LineSeries LineSeriesFirstChoice { get; set; }
         public LineSeries LineSeriesChangedChoice { get; set; }
+        private MontyHallMC MontyHall { get; set; }
         public MainWindow()
         {
             InitializeComponent();
@@ -66,33 +67,29 @@ namespace GUI
             }
 
             RunButton.IsEnabled = false;
-            var mc = new MonteCarlo(doors, replications);
+            PauseButton.IsEnabled = true;
+            this.MontyHall = new MontyHallMC(new MontyHallInputData() { DoorsCount = doors }, replications);
             var percentage = 0;
 
             LineSeriesFirstChoice.Values = new ChartValues<ObservablePoint>();
             LineSeriesChangedChoice.Values = new ChartValues<ObservablePoint>();
-            mc.ChangedChoiceResult += (i, p) =>
-           {
-               Application.Current.Dispatcher.InvokeAsync(() =>
-               {
-                   LineSeriesChangedChoice.Values.Add(new ObservablePoint(i, (double)p));
-                   Ccl.Content = $"Changed choice winning rate: {p: 0.00}%";
-                   Progress.Content = $"{++percentage} % Done";
-               });
 
-           };
-            mc.FirstChoiceResult += (i, p) =>
+            MontyHall.OnNewPartialResult += (i, data) =>
             {
                 Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    LineSeriesFirstChoice.Values.Add(new ObservablePoint(i, (double)p));
-                    Fcl.Content = $"First choice winning rate: {p: 0.00}%";
+                    LineSeriesChangedChoice.Values.Add(new ObservablePoint(i, data.ChangedChoiseWinningPropability));
+                    Ccl.Content = $"Changed choice winning rate: {data.ChangedChoiseWinningPropability: 0.00}%";
+                    LineSeriesFirstChoice.Values.Add(new ObservablePoint(i, data.FirstChoiseWinningPropability));
+                    Fcl.Content = $"First choice winning rate: {data.FirstChoiseWinningPropability: 0.00}%";
+                    Progress.Content = $"{++percentage} % Done";
                 });
-
             };
-
-            await mc.RunExperiment();
+            
+            await MontyHall.RunExperiment();
             RunButton.IsEnabled = true;
+            PauseButton.IsEnabled = false;
+            ContinueButton.IsEnabled = false;
             await Application.Current.Dispatcher.InvokeAsync(() =>
              {
                  Progress.Content = $"100 % Done";
@@ -100,5 +97,18 @@ namespace GUI
 
         }
 
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {            
+            MontyHall.Pause();
+            PauseButton.IsEnabled = false;
+            ContinueButton.IsEnabled = true;
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            MontyHall.Continue();
+            ContinueButton.IsEnabled = false;
+            PauseButton.IsEnabled = true;
+        }
     }
 }
