@@ -10,44 +10,58 @@ namespace Core
     {
 
         private Random winningDoorGenerator;
-        private Random userChoiseGenerator;
-        private Random doorToOpenGenerator;
+        private Random userFirstChoiseGenerator;
+        private Random doorToOpenGeneratorGoodTip;
+        private Random doorToOpenGeneratorBadTip;
+        private Random userChangedChoiseGenerator;
 
         private int winningChoise;
         private int userFirstChoise;
         private int userChangedChoise;
         private int openedDoors;
 
-        public long FirstChoiseWinning { get; set; } = 0;
-        public long ChangedChoiseWinning { get; set; } = 0;
+        private List<int> doors;
 
         public MontyHallMC(MontyHallInputData inputData, long replications = 1000000, long? resultInterval = null) : base(inputData, replications, resultInterval)
         {
-        }               
+        }
+
+        public long FirstChoiseWinning { get; set; } = 0;
+        public long ChangedChoiseWinning { get; set; } = 0;
+
+                      
 
         public override void Inicialization()
         {
             var seedRandom = new Random();
             winningDoorGenerator = new Random(seedRandom.Next());
-            userChoiseGenerator = new Random(seedRandom.Next());
-            doorToOpenGenerator = new Random(seedRandom.Next());
+            userFirstChoiseGenerator = new Random(seedRandom.Next());
+            doorToOpenGeneratorGoodTip = new Random(seedRandom.Next());
+            doorToOpenGeneratorBadTip = new Random(seedRandom.Next());
+            userChangedChoiseGenerator = new Random(seedRandom.Next());
+
+            doors = Enumerable.Range(0, InputData.DoorsCount).ToList();
         }
 
         public override MontyHallResult Experiment(long replication)
         {
-            winningChoise = winningDoorGenerator.Next(InputData.DoorsCount);
-            userFirstChoise = userChoiseGenerator.Next(InputData.DoorsCount);
+            winningChoise = doors[winningDoorGenerator.Next(InputData.DoorsCount)];
+            userFirstChoise = doors[userFirstChoiseGenerator.Next(InputData.DoorsCount)];
 
-            do
-            {
-                openedDoors = doorToOpenGenerator.Next(InputData.DoorsCount);
-            } while (openedDoors == winningChoise || openedDoors == userFirstChoise);
+            doors.Remove(winningChoise);
+            doors.Remove(userFirstChoise);
+            
+            openedDoors = doors[ winningChoise == userFirstChoise ? doorToOpenGeneratorGoodTip.Next(doors.Count) : doorToOpenGeneratorBadTip.Next(doors.Count) ];
 
-            do
-            {
-                userChangedChoise = userChoiseGenerator.Next(InputData.DoorsCount);
-            } while (userChangedChoise == userFirstChoise || userChangedChoise == openedDoors);
+            doors.Remove(openedDoors);
+            doors.Add(winningChoise);
 
+            userChangedChoise = doors[userChangedChoiseGenerator.Next(doors.Count)];
+
+            //for next replication
+            doors.Add(openedDoors);
+            if (userFirstChoise != winningChoise) doors.Add(userFirstChoise);
+            
             if (userFirstChoise == winningChoise) FirstChoiseWinning++;
             else if (userChangedChoise == winningChoise) ChangedChoiseWinning++;
 
@@ -62,7 +76,7 @@ namespace Core
         {
             return null;
         }
-    }
+    }    
 
     public class MontyHallInputData
     {

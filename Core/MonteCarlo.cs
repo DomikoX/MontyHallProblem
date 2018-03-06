@@ -7,51 +7,57 @@ using System.Threading.Tasks;
 
 namespace Core
 {
-    public abstract class MonteCarlo<R, I, F>
+    public abstract class MonteCarlo<PartialResultData, InputDataType, FinalResultDataType>
     {
         public long Replications { get; set; }
         public long ResultInterval { get; set; }
-        public I InputData { get; set; }
+        public InputDataType InputData { get; set; }
+
 
         private delegate bool ResultIntervalConditionDelegate(long replication);
         private ResultIntervalConditionDelegate ResultIntervalCondition;
 
-        public delegate void PartialResult(long replication, R result);
+        public delegate void PartialResult(long replication, PartialResultData result);
         public event PartialResult OnNewPartialResult;
 
-        public delegate void Result(F result);
+        public delegate void Result(FinalResultDataType result);
         public event Result OnFinish;
 
         private ManualResetEvent mutex;
+        private bool cancel;
 
-        public MonteCarlo(I inputData, long replications = 1000000, long? resultInterval = null)
+        public MonteCarlo(InputDataType inputData, long replications = 1000000, long? resultInterval = null)
         {
             this.InputData = inputData;
             this.Replications = replications;
-            this.ResultInterval = resultInterval ?? (Replications >= 1000 ? Replications / 100 : Replications / 10);
+            this.ResultInterval = resultInterval ?? (Replications >= 1000 ? Replications / 500 : Replications / 10);
             this.mutex = new ManualResetEvent(true);
-            if( resultInterval == 1)
+            this.cancel = false;
+            if (resultInterval == 1)
             {
                 ResultIntervalCondition = (rep) => true;
-            }else
+            }
+            else
             {
                 ResultIntervalCondition = (rep) => rep % (ResultInterval) == 1;
             }
         }
 
         public abstract void Inicialization();
-        public abstract R Experiment(long replication);
-        public abstract F AfterExperiment();
+        public abstract PartialResultData Experiment(long replication);
+        public abstract FinalResultDataType AfterExperiment();
 
         public Task RunExperiment()
         {
             return Task.Run(() =>
             {
                 Inicialization();
-                R experimentResult = default(R);
+                PartialResultData experimentResult = default(PartialResultData);
                 for (long i = 1; i <= Replications; i++)
                 {
                     mutex.WaitOne();
+
+                    if (cancel) return;
 
                     experimentResult = Experiment(i);
 
@@ -73,6 +79,12 @@ namespace Core
         public void Continue()
         {
             mutex.Set();
+        }
+
+        public void Cancel()
+        {
+            this.cancel = true;
+            this.Continue();
         }
     }
 }

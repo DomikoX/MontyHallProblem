@@ -7,33 +7,38 @@
         xmlns:d3="clr-namespace:InteractiveDataDisplay.WPF;assembly=InteractiveDataDisplay.WPF"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         mc:Ignorable="d"
-        Title="Monty Hall problem" Height="553.324" Width="793.063">
+        Title="Monty Hall problem" Height="553.324" Width="793.063" Closing="Window_Closing">
     <Grid>
-        <Border BorderBrush="Black" BorderThickness="1" Height="74" Margin="10,10,10,0" VerticalAlignment="Top">
-            <Grid>
+        <Border BorderBrush="Black" BorderThickness="1" Height="105" Margin="10,10,10.4,0" VerticalAlignment="Top">
+            <Grid Margin="0.2,0.2,-0.4,-1.2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="151*"/>
-                    <ColumnDefinition Width="323*"/>
-                    <ColumnDefinition Width="290*"/>
+                    <ColumnDefinition Width="353*"/>
+                    <ColumnDefinition Width="261*"/>
                 </Grid.ColumnDefinitions>
-                <Label Content="Number of doors:&#xD;&#xA;" Margin="0,8,10.2,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="104" Height="42"/>
-                <Label Content="Number of replications:" Margin="0,36,10.2,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="134" Height="26"/>
+                <Label Content="Number of doors:&#xD;&#xA;" HorizontalContentAlignment="Right" Margin="0,8,10.2,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="131" Height="42"/>
+                <Label Content="Number of replications:" HorizontalContentAlignment="Right" Margin="0,36,10.2,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="131" Height="26"/>
                 <TextBox x:Name="DoorCount" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="9.8,12,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="120" />
-                <TextBox x:Name="Replications" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="9.8,40,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="120" />
-                <Button x:Name="RunButton" Content="Run" Margin="0,0,90.4,38" Grid.Column="1" Click="Button_Click" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75"/>
-                <Label x:Name="Progress" Content="0 % Done" Grid.Column="1" HorizontalContentAlignment="Left" Margin="0,11,0.4,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="85" Height="26"/>
-                <Label  x:Name="Fcl" Foreground="Red" Content="First choice winning rate: 0%" HorizontalContentAlignment="Right" Grid.Column="2" Margin="0,8,9.8,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="218" Height="26"/>
-                <Label x:Name="Ccl" Foreground="Blue" Content="Changed choice winning rate: 0%" HorizontalContentAlignment="Right"  Grid.Column="2" Margin="0,34,9.8,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="218" Height="26"/>
-                <Button x:Name="PauseButton" Content="Pause" Grid.Column="1" Margin="0,44,90.4,0" VerticalAlignment="Top" Click="Button_Click_1" Height="19" IsEnabled="False" HorizontalAlignment="Right" Width="75"/>
-                <Button x:Name="ContinueButton" Content="Continue" Grid.Column="1" HorizontalAlignment="Left" Margin="237.8,44,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_2" Height="19" IsEnabled="False"/>
+                <TextBox x:Name="Replications" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="9.8,40,0,0" TextWrapping="Wrap" Text="10000000" VerticalAlignment="Top" Width="120" />
+
+                <Button x:Name="RunButton" Content="Run" Margin="0,12,94,0" Grid.Column="1" Click="Button_Click" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Top"/>
+                <Label x:Name="Progress" Content="0 % Done" Grid.Column="1" HorizontalContentAlignment="Left" Margin="0,8,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="85" Height="26"/>
+                <Button x:Name="PauseButton" Content="Pause" Grid.Column="1" Margin="0,41,94,0" VerticalAlignment="Top" Click="Button_Click_1" Height="19" IsEnabled="False" HorizontalAlignment="Right" Width="75"/>
+                <Button x:Name="ContinueButton" Content="Continue" Grid.Column="1" Margin="0,41,14,0" VerticalAlignment="Top" Click="Button_Click_2" Height="19" IsEnabled="False" HorizontalAlignment="Right" Width="75"/>
+                <Slider x:Name="Slider" Grid.Column="1" TickFrequency="1" IsSnapToTickEnabled="True" HorizontalAlignment="Left" Margin="9.8,75,0,0" VerticalAlignment="Top" Width="120" Minimum="0" Maximum="100" Value="15" Height="18"/>
+                <Label Content="{Binding ElementName=Slider, Path=Value}" HorizontalContentAlignment="Right" ContentStringFormat="Cut off first {0:0.##}%" HorizontalAlignment="Right" Margin="0,67,10.2,0" VerticalAlignment="Top" Width="131" RenderTransformOrigin="0.5,0.5" Height="26">
+                </Label>
+                <CheckBox x:Name="Fcl" Foreground="Red" Content="First choice winning rate: 0%" Grid.Column="2" HorizontalAlignment="Left" Margin="10,11,0,0" VerticalAlignment="Top" Width="241" IsChecked="True"/>
+                <CheckBox  x:Name="Ccl" Foreground="Blue" Content="Changed choice winning rate: 0%" Grid.Column="2" HorizontalAlignment="Left" Margin="10,31,0,0" VerticalAlignment="Top" Width="241"/>
+                <ProgressBar x:Name="ProgressBar" Grid.Column="1" HorizontalAlignment="Right" Height="18" Margin="0,67,14,0" VerticalAlignment="Top" Width="155"/>
             </Grid>
         </Border>
-        <lvc:CartesianChart Series="{Binding SeriesCollection}" Margin="10,89,10,10" >
+        <lvc:CartesianChart Series="{Binding SeriesCollection}" Margin="10,120,10.4,10" >
             <lvc:CartesianChart.AxisY>
-                <lvc:Axis Title="Winning rate (%)" MinValue="0" ></lvc:Axis>
+                <lvc:Axis Title="Winning rate (%)" ></lvc:Axis>
             </lvc:CartesianChart.AxisY>
             <lvc:CartesianChart.AxisX>
-                <lvc:Axis Title="Replications" MinValue="0"></lvc:Axis>
+                <lvc:Axis Title="Replications"></lvc:Axis>
             </lvc:CartesianChart.AxisX>
         </lvc:CartesianChart>
     </Grid>
