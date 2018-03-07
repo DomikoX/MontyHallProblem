@@ -8,7 +8,6 @@ namespace Core
 {
     public class MontyHallMC : MonteCarlo<MontyHallResult,MontyHallInputData,object>
     {
-
         private Random winningDoorGenerator;
         private Random userFirstChoiseGenerator;
         private Random doorToOpenGeneratorGoodTip;
@@ -27,9 +26,7 @@ namespace Core
         }
 
         public long FirstChoiseWinning { get; set; } = 0;
-        public long ChangedChoiseWinning { get; set; } = 0;
-
-                      
+        public long ChangedChoiseWinning { get; set; } = 0;                      
 
         public override void Inicialization()
         {
@@ -45,17 +42,21 @@ namespace Core
 
         public override MontyHallResult Experiment(long replication)
         {
+            // generate winning door
             winningChoise = doors[winningDoorGenerator.Next(InputData.DoorsCount)];
+            //generate user first choice
             userFirstChoise = doors[userFirstChoiseGenerator.Next(InputData.DoorsCount)];
 
             doors.Remove(winningChoise);
             doors.Remove(userFirstChoise);
             
+            //generate  door to open
             openedDoors = doors[ winningChoise == userFirstChoise ? doorToOpenGeneratorGoodTip.Next(doors.Count) : doorToOpenGeneratorBadTip.Next(doors.Count) ];
 
             doors.Remove(openedDoors);
             doors.Add(winningChoise);
 
+            // generate new user choice
             userChangedChoise = doors[userChangedChoiseGenerator.Next(doors.Count)];
 
             //for next replication

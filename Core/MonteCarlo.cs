@@ -7,9 +7,21 @@ using System.Threading.Tasks;
 
 namespace Core
 {
+    /// <summary>
+    /// Class that represent Monte Carlo simulation. 
+    /// </summary>
+    /// <typeparam name="PartialResultData"> Data that is returned on every replications (unless it it specified otherwise)</typeparam>
+    /// <typeparam name="InputDataType">Data that is used for inicialization</typeparam>
+    /// <typeparam name="FinalResultDataType"> Data that is returned after simulation ends</typeparam>
     public abstract class MonteCarlo<PartialResultData, InputDataType, FinalResultDataType>
     {
+        /// <summary>
+        /// Number of replikations to run
+        /// </summary>
         public long Replications { get; set; }
+        /// <summary>
+        /// Set interval how often results from replications are invoked
+        /// </summary>
         public long ResultInterval { get; set; }
         public InputDataType InputData { get; set; }
 
@@ -43,10 +55,27 @@ namespace Core
             }
         }
 
+        /// <summary>
+        /// Here should be be all  data inicialized before experiment is started
+        /// </summary>
         public abstract void Inicialization();
+
+        /// <summary>
+        /// This method represent single replications
+        /// </summary>
+        /// <param name="replication">replication number</param>
+        /// <returns></returns>
         public abstract PartialResultData Experiment(long replication);
+        /// <summary>
+        /// method that is invoked after experiment runs
+        /// </summary>
+        /// <returns></returns>
         public abstract FinalResultDataType AfterExperiment();
 
+        /// <summary>
+        /// Run experiment, before that calls Inicialization() method and after all replikations call AfterExperiment() method and invoke OnFinish event
+        /// </summary>
+        /// <returns></returns>
         public Task RunExperiment()
         {
             return Task.Run(() =>
@@ -71,16 +100,25 @@ namespace Core
             });
         }
 
+        /// <summary>
+        /// pause execution of current simulation
+        /// </summary>
         public void Pause()
         {
             mutex.Reset();
         }
 
+        /// <summary>
+        /// Continue execution of current simulation
+        /// </summary>
         public void Continue()
         {
             mutex.Set();
         }
 
+        /// <summary>
+        /// cancel current simulation
+        /// </summary>
         public void Cancel()
         {
             this.cancel = true;
